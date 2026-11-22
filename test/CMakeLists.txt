@@ -30,3 +30,6 @@ if(YK_GIF20_PART_SOURCES)
   add_library(yk_gif20_self_contained OBJECT ${YK_GIF20_PART_SOURCES})
   target_link_libraries(yk_gif20_self_contained PRIVATE yk::gif20)
 endif()
+
+yk_gif20_add_test(decode)
+yk_gif20_add_test(compile_time)
