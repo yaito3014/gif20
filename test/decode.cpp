@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <ranges>
+#include <sstream>
+#include <string>
 #include <vector>
 
 namespace {
@@ -91,6 +93,14 @@ TEST_CASE("decode accepts any byte type", "[decode]")
   }
   CHECK(gif::decode(input) == fx::two_pixels_image());
   CHECK(gif::decode(std::vector<char>(fx::two_pixels.begin(), fx::two_pixels.end())) == fx::two_pixels_image());
+}
+
+TEST_CASE("decode does not read a single-pass input past the trailer", "[decode]")
+{
+  std::istringstream stream(std::string(fx::two_pixels.begin(), fx::two_pixels.end()) + "XYZ");
+  stream >> std::noskipws;
+  CHECK(gif::decode(std::views::istream<unsigned char>(stream)) == fx::two_pixels_image());
+  CHECK(stream.peek() == 'X');
 }
 
 TEST_CASE("decode rejects malformed input", "[decode]")

@@ -18,12 +18,16 @@ public:
 
   [[nodiscard]] constexpr unsigned char byte()
   {
+    // moves past the previous byte only now: incrementing a single-pass
+    // iterator may read the input, which must stop at the last byte decoded
+    if (started_) {
+      ++it_;
+    }
     if (it_ == last_) {
       throw decode_error("yk::gif20::decode: the input ends early");
     }
-    unsigned char const b = static_cast<unsigned char>(*it_);
-    ++it_;
-    return b;
+    started_ = true;
+    return static_cast<unsigned char>(*it_);
   }
 
   // little-endian
@@ -58,6 +62,7 @@ public:
 private:
   I it_;
   S last_;
+  bool started_ = false;
 };
 
 }  // namespace yk::gif20::detail
