@@ -67,12 +67,10 @@ inline constexpr std::array<unsigned char, 35> two_pixels{
 
 [[nodiscard]] constexpr image two_pixels_image()
 {
-  return image{
-      .width = 2,
-      .height = 1,
-      .global_palette = {{0, 0, 0}, {255, 255, 255}},
-      .frames = {frame{.width = 2, .height = 1, .pixels = {0, 1}}},
-  };
+  image img{.width = 2, .height = 1, .global_palette = {{0, 0, 0}, {255, 255, 255}}};
+  // not an initializer list of frames: MSVC 14.44 in debug mode fails to destroy it during constant evaluation
+  img.frames.push_back(frame{.width = 2, .height = 1, .pixels = {0, 1}});
+  return img;
 }
 
 }  // namespace yk::gif20::test

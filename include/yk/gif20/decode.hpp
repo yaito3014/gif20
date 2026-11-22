@@ -114,19 +114,19 @@ template<byte_input_range R>
     }
   }
 
+  // an if chain, not a switch whose break MSVC fails to constant-evaluate inside the loop
   for (;;) {
-    switch (in.byte()) {
-      case detail::image_separator:
-        img.frames.push_back(detail::read_frame(in, img));
-        break;
-      case detail::extension_introducer:
-        static_cast<void>(in.byte());  // the label
-        in.skip_sub_blocks();
-        break;
-      case detail::trailer:
-        return img;
-      default:
-        throw decode_error("yk::gif20::decode: an unknown block");
+    unsigned char const introducer = in.byte();
+    if (introducer == detail::trailer) {
+      return img;
+    }
+    if (introducer == detail::image_separator) {
+      img.frames.push_back(detail::read_frame(in, img));
+    } else if (introducer == detail::extension_introducer) {
+      static_cast<void>(in.byte());  // the label
+      in.skip_sub_blocks();
+    } else {
+      throw decode_error("yk::gif20::decode: an unknown block");
     }
   }
 }
