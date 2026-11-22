@@ -17,11 +17,23 @@ inline constexpr unsigned char extension_introducer = 0x21;
 inline constexpr unsigned char image_separator = 0x2C;
 inline constexpr unsigned char trailer = 0x3B;
 
+inline constexpr unsigned char plain_text_label = 0x01;
+inline constexpr unsigned char graphic_control_label = 0xF9;
+
 // the packed fields of the logical screen descriptor and the image descriptor
 inline constexpr unsigned char color_table_flag = 0x80;
 inline constexpr unsigned char interlace_flag = 0x40;
 inline constexpr unsigned char color_table_size_mask = 0x07;
 inline constexpr unsigned color_resolution_shift = 4;
+
+// the graphic control extension: its block size and the fields of its packed byte
+inline constexpr unsigned char graphic_control_size = 4;
+inline constexpr unsigned char transparent_color_flag = 0x01;
+inline constexpr unsigned char user_input_flag = 0x02;
+inline constexpr unsigned disposal_shift = 2;
+inline constexpr unsigned disposal_mask = 0x07;
+// the methods past it are reserved
+inline constexpr unsigned max_disposal = 3;
 
 inline constexpr std::size_t max_palette_size = 256;
 inline constexpr std::size_t max_sub_block_size = 255;

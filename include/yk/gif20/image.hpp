@@ -1,6 +1,7 @@
 #ifndef YK_GIF20_IMAGE_HPP
 #define YK_GIF20_IMAGE_HPP
 
+#include <optional>
 #include <vector>
 
 #include <cstdint>
@@ -15,6 +16,31 @@ struct color {
   friend constexpr bool operator==(color const&, color const&) = default;
 };
 
+// What happens to a frame once its delay is over, before the next one is drawn
+enum class disposal : std::uint8_t {
+  unspecified = 0,
+  // leave it in place
+  keep = 1,
+  // restore its area to the background color
+  background = 2,
+  // restore its area to what it was before the frame was drawn
+  previous = 3,
+};
+
+// A graphic control extension: how and how long a frame is shown
+struct graphic_control {
+  disposal dispose = disposal::unspecified;
+  // whether to wait for user input before going on
+  bool user_input = false;
+  // in hundredths of a second
+  std::uint16_t delay = 0;
+  // the palette index of the pixels not drawn, if there is one; an index past
+  // the end of the palette matches no pixel
+  std::optional<std::uint8_t> transparent_index{};
+
+  friend constexpr bool operator==(graphic_control const&, graphic_control const&) = default;
+};
+
 // An image in the GIF stream, drawn on the logical screen
 struct frame {
   std::uint16_t left = 0;
@@ -26,6 +52,8 @@ struct frame {
   std::vector<color> local_palette{};
   // width * height palette indices, row by row from the top
   std::vector<std::uint8_t> pixels{};
+  // the graphic control extension right before the frame, if there is one
+  std::optional<graphic_control> control{};
 
   friend constexpr bool operator==(frame const&, frame const&) = default;
 };

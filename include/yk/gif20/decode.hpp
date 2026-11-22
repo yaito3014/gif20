@@ -11,6 +11,7 @@
 #include <yk/lzw20/decode.hpp>
 
 #include <algorithm>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <vector>
@@ -41,6 +42,29 @@ template<class Reader>
   } catch (lzw20::decode_error const& e) {
     throw decode_error(std::string("yk::gif20::decode: malformed image data: ") + e.what());
   }
+}
+
+// after the label
+template<class Reader>
+[[nodiscard]] constexpr graphic_control read_graphic_control(Reader& in)
+{
+  if (in.byte() != graphic_control_size) {
+    throw decode_error("yk::gif20::decode: a graphic control extension is not 4 bytes");
+  }
+  unsigned char const packed = in.byte();
+  unsigned const method = (packed >> disposal_shift) & disposal_mask;
+  if (method > max_disposal) {
+    throw decode_error("yk::gif20::decode: a reserved disposal method");
+  }
+  graphic_control control{.dispose = static_cast<disposal>(method), .user_input = (packed & user_input_flag) != 0, .delay = in.u16()};
+  unsigned char const transparent_index = in.byte();
+  if (packed & transparent_color_flag) {
+    control.transparent_index = transparent_index;
+  }
+  if (in.byte() != 0) {
+    throw decode_error("yk::gif20::decode: a graphic control extension is not 4 bytes");
+  }
+  return control;
 }
 
 template<class Reader>
@@ -87,8 +111,8 @@ template<class Reader>
 
 // Throws decode_error on input that is not a GIF this library reads. During
 // constant evaluation the throw makes the expression non-constant, so malformed
-// input becomes a compile error. Extensions are skipped, and the input after the
-// trailer is not read.
+// input becomes a compile error. Extensions other than graphic control are
+// skipped, and the input after the trailer is not read.
 template<byte_input_range R>
 [[nodiscard]] constexpr image decode(R&& input)
 {
@@ -117,6 +141,8 @@ template<byte_input_range R>
     }
   }
 
+  // the graphic control extension for the next graphic rendering block
+  std::optional<graphic_control> control;
   // an if chain, not a switch whose break MSVC fails to constant-evaluate inside the loop
   for (;;) {
     unsigned char const introducer = in.byte();
@@ -125,9 +151,22 @@ template<byte_input_range R>
     }
     if (introducer == detail::image_separator) {
       img.frames.push_back(detail::read_frame(in, img));
+      img.frames.back().control = control;
+      control.reset();
     } else if (introducer == detail::extension_introducer) {
-      static_cast<void>(in.byte());  // the label
-      in.skip_sub_blocks();
+      unsigned char const label = in.byte();
+      if (label == detail::graphic_control_label) {
+        if (control) {
+          throw decode_error("yk::gif20::decode: two graphic control extensions before one graphic rendering block");
+        }
+        control = detail::read_graphic_control(in);
+      } else {
+        // plain text is a graphic rendering block too, the one the extension was for
+        if (label == detail::plain_text_label) {
+          control.reset();
+        }
+        in.skip_sub_blocks();
+      }
     } else {
       throw decode_error("yk::gif20::decode: an unknown block");
     }

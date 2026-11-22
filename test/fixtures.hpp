@@ -73,6 +73,33 @@ inline constexpr std::array<unsigned char, 35> two_pixels{
   return img;
 }
 
+// two_pixels with a graphic control extension before its frame
+inline constexpr std::array<unsigned char, 43> two_pixels_controlled{
+    0x47, 0x49, 0x46, 0x38, 0x39, 0x61,              // "GIF89a"
+    0x02, 0x00, 0x01, 0x00,                          // logical screen 2x1
+    0x80,                                            // a global color table of 2 entries
+    0x00, 0x00,                                      // background color index, pixel aspect ratio
+    0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF,              // black, white
+    0x21, 0xF9, 0x04,                                // graphic control extension of 4 bytes:
+    0x0B,                                            //   restore to background, user input, transparent color
+    0x34, 0x12,                                      //   delay, in hundredths of a second
+    0x01,                                            //   transparent color index
+    0x00,                                            //   block terminator
+    0x2C, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01,  // image descriptor: at 0,0, 2x1,
+    0x00, 0x00,                                      //   no local color table, not interlaced
+    0x02,                                            // LZW minimum code size
+    0x02, 0x44, 0x0A,                                // CLEAR 0 1 EOI, 3 bits each, in one sub-block
+    0x00,                                            // block terminator
+    0x3B,                                            // trailer
+};
+
+[[nodiscard]] constexpr image two_pixels_controlled_image()
+{
+  image img = two_pixels_image();
+  img.frames[0].control = graphic_control{.dispose = disposal::background, .user_input = true, .delay = 0x1234, .transparent_index = 1};
+  return img;
+}
+
 }  // namespace yk::gif20::test
 
 #endif  // YK_GIF20_TEST_FIXTURES_HPP
