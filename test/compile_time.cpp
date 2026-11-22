@@ -14,6 +14,7 @@ namespace fx = yk::gif20::test;
 static_assert(gif::decode(fx::two_pixels) == fx::two_pixels_image());
 static_assert(std::ranges::equal(gif::encode(fx::two_pixels_image()), fx::two_pixels));
 static_assert(gif::decode(fx::two_pixels_controlled) == fx::two_pixels_controlled_image());
+static_assert(std::ranges::equal(gif::encode(fx::two_pixels_controlled_image()), fx::two_pixels_controlled));
 
 static_assert([] {
   gif::image const img = gif::decode(fx::pillow_still);

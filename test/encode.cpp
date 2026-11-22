@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <optional>
 #include <random>
 #include <stdexcept>
 #include <vector>
@@ -54,6 +55,12 @@ TEST_CASE("encode lays out a GIF as the specification does", "[encode]")
 {
   bytes const expected(fx::two_pixels.begin(), fx::two_pixels.end());
   CHECK(gif::encode(fx::two_pixels_image()) == expected);
+}
+
+TEST_CASE("encode lays out a graphic control extension as the specification does", "[encode]")
+{
+  bytes const expected(fx::two_pixels_controlled.begin(), fx::two_pixels_controlled.end());
+  CHECK(gif::encode(fx::two_pixels_controlled_image()) == expected);
 }
 
 TEST_CASE("encode to any byte type", "[encode]")
@@ -114,6 +121,30 @@ TEST_CASE("decode reverses encode for a large frame", "[encode]")
   CHECK(gif::decode(gif::encode(img)) == img);
 }
 
+TEST_CASE("decode reverses encode for graphic control extensions", "[encode]")
+{
+  gif::image img = fx::two_pixels_image();
+  gif::frame const f = img.frames[0];
+  img.frames.clear();
+  for (std::optional<gif::graphic_control> const& control : std::initializer_list<std::optional<gif::graphic_control>>{
+           std::nullopt,
+           gif::graphic_control{},
+           gif::graphic_control{.dispose = gif::disposal::keep},
+           gif::graphic_control{.dispose = gif::disposal::background},
+           gif::graphic_control{.dispose = gif::disposal::previous},
+           gif::graphic_control{.user_input = true},
+           gif::graphic_control{.delay = 0xFFFF},
+           gif::graphic_control{.transparent_index = 0},
+           // past the end of the palette, where it matches no pixel
+           gif::graphic_control{.transparent_index = 255},
+       }) {
+    gif::frame g = f;
+    g.control = control;
+    img.frames.push_back(g);
+  }
+  CHECK(gif::decode(gif::encode(img)) == img);
+}
+
 TEST_CASE("encode rejects an image it cannot write", "[encode]")
 {
   gif::image const valid = fx::two_pixels_image();
@@ -167,6 +198,13 @@ TEST_CASE("encode rejects an image it cannot write", "[encode]")
   {
     gif::image img = valid;
     img.background_index = 2;
+    check_rejects(img);
+  }
+
+  SECTION("a disposal method that is none of the enumerators")
+  {
+    gif::image img = valid;
+    img.frames[0].control = gif::graphic_control{.dispose = static_cast<gif::disposal>(4)};
     check_rejects(img);
   }
 }

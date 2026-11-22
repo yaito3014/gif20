@@ -9,6 +9,7 @@
 #include <yk/lzw20/encode.hpp>
 
 #include <algorithm>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -45,6 +46,9 @@ constexpr void check_frame(image const& img, frame const& f)
   }
   if (std::ranges::any_of(f.pixels, [&](std::uint8_t index) { return index >= palette.size(); })) {
     throw std::invalid_argument("yk::gif20::encode: a pixel is past the end of its palette");
+  }
+  if (f.control && static_cast<unsigned>(f.control->dispose) > max_disposal) {
+    throw std::invalid_argument("yk::gif20::encode: a disposal method is none of the enumerators");
   }
 }
 
@@ -120,7 +124,10 @@ template<byte_like Byte = unsigned char>
   detail::check_image(img);
 
   detail::writer<Byte> out;
-  constexpr unsigned char header[] = {'G', 'I', 'F', '8', '7', 'a'};
+  // GIF89a only for the graphic control extension, so that other images stay readable as GIF87a
+  bool const has_control = std::ranges::any_of(img.frames, [](frame const& f) { return f.control.has_value(); });
+  unsigned char const version = has_control ? '9' : '7';
+  unsigned char const header[] = {'G', 'I', 'F', '8', version, 'a'};
   for (unsigned char const c : header) {
     out.byte(c);
   }
@@ -141,6 +148,21 @@ template<byte_like Byte = unsigned char>
   }
 
   for (frame const& f : img.frames) {
+    if (f.control) {
+      graphic_control const& c = *f.control;
+      out.byte(detail::extension_introducer);
+      out.byte(detail::graphic_control_label);
+      out.byte(detail::graphic_control_size);
+      out.byte(
+          static_cast<unsigned char>(
+              (static_cast<unsigned>(c.dispose) << detail::disposal_shift) | (c.user_input ? detail::user_input_flag : 0u)
+              | (c.transparent_index ? detail::transparent_color_flag : 0u)
+          )
+      );
+      out.u16(c.delay);
+      out.byte(c.transparent_index.value_or(0));
+      out.byte(0);
+    }
     out.byte(detail::image_separator);
     out.u16(f.left);
     out.u16(f.top);
