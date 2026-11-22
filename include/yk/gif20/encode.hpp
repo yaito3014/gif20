@@ -29,6 +29,9 @@ constexpr void check_palette(std::vector<color> const& palette)
 
 constexpr void check_frame(image const& img, frame const& f)
 {
+  if (f.width == 0 || f.height == 0) {
+    throw std::invalid_argument("yk::gif20::encode: a frame has zero width or height");
+  }
   if (std::uint32_t{f.left} + f.width > img.width || std::uint32_t{f.top} + f.height > img.height) {
     throw std::invalid_argument("yk::gif20::encode: a frame is outside the logical screen");
   }

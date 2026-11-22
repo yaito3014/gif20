@@ -51,6 +51,9 @@ template<class Reader>
   f.top = in.u16();
   f.width = in.u16();
   f.height = in.u16();
+  if (f.width == 0 || f.height == 0) {
+    throw decode_error("yk::gif20::decode: a frame has zero width or height");
+  }
   if (std::uint32_t{f.left} + f.width > img.width || std::uint32_t{f.top} + f.height > img.height) {
     throw decode_error("yk::gif20::decode: a frame is outside the logical screen");
   }

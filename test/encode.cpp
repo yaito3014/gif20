@@ -140,6 +140,15 @@ TEST_CASE("encode rejects an image it cannot write", "[encode]")
     check_rejects(img);
   }
 
+  SECTION("a frame of zero width or height")
+  {
+    gif::image img = valid;
+    img.frames[0] = gif::frame{.width = 0, .height = 1};
+    check_rejects(img);
+    img.frames[0] = gif::frame{.width = 2, .height = 0};
+    check_rejects(img);
+  }
+
   SECTION("no color table")
   {
     gif::image img = valid;

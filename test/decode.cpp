@@ -140,6 +140,20 @@ TEST_CASE("decode rejects malformed input", "[decode]")
     CHECK_THROWS_AS(gif::decode(with(6, 0x01)), gif::decode_error);
   }
 
+  SECTION("a frame of zero width or height")
+  {
+    // with the image data of no pixels: CLEAR EOI
+    for (std::size_t const dimension : {24u, 26u}) {
+      CAPTURE(dimension);
+      bytes b = valid;
+      b[dimension] = 0x00;
+      b[30] = 0x01;
+      b[31] = 0x2C;
+      b.erase(b.begin() + 32);
+      CHECK_THROWS_AS(gif::decode(b), gif::decode_error);
+    }
+  }
+
   SECTION("no color table")
   {
     bytes b = valid;

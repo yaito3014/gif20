@@ -19,6 +19,7 @@ struct color {
 struct frame {
   std::uint16_t left = 0;
   std::uint16_t top = 0;
+  // at least 1: other decoders, Pillow among them, reject an empty frame
   std::uint16_t width = 0;
   std::uint16_t height = 0;
   // empty to use the global palette; at most 256 colors
