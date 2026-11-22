@@ -32,4 +32,5 @@ if(YK_GIF20_PART_SOURCES)
 endif()
 
 yk_gif20_add_test(decode)
+yk_gif20_add_test(encode)
 yk_gif20_add_test(compile_time)

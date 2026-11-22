@@ -21,10 +21,23 @@ inline constexpr unsigned char trailer = 0x3B;
 inline constexpr unsigned char color_table_flag = 0x80;
 inline constexpr unsigned char interlace_flag = 0x40;
 inline constexpr unsigned char color_table_size_mask = 0x07;
+inline constexpr unsigned color_resolution_shift = 4;
 
+inline constexpr std::size_t max_palette_size = 256;
+inline constexpr std::size_t max_sub_block_size = 255;
 
 inline constexpr unsigned min_lzw_code_size = 2;
 inline constexpr unsigned max_lzw_code_size = 8;
+
+// the n of the smallest color table, of 2^n entries, that holds size colors
+[[nodiscard]] constexpr unsigned color_table_bits(std::size_t size) noexcept
+{
+  unsigned bits = 1;
+  while ((std::size_t{1} << bits) < size) {
+    ++bits;
+  }
+  return bits;
+}
 
 template<unsigned CodeSize>
 inline constexpr lzw20::options lzw_options{

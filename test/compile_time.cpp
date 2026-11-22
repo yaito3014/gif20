@@ -12,6 +12,7 @@ namespace gif = yk::gif20;
 namespace fx = yk::gif20::test;
 
 static_assert(gif::decode(fx::two_pixels) == fx::two_pixels_image());
+static_assert(std::ranges::equal(gif::encode(fx::two_pixels_image()), fx::two_pixels));
 
 static_assert([] {
   gif::image const img = gif::decode(fx::pillow_still);
@@ -21,6 +22,11 @@ static_assert([] {
 static_assert([] {
   gif::image const img = gif::decode(fx::pillow_animation);
   return img.frames.size() == 3 && img.frames[2].pixels == fx::animation_pixels(2);
+}());
+
+static_assert([] {
+  gif::image const img = gif::decode(fx::pillow_still);
+  return gif::decode(gif::encode(img)) == img;
 }());
 
 }  // namespace
